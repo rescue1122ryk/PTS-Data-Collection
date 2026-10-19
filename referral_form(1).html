@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Transfer Service Data Collection Form</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:Poppins,Segoe UI,Arial,sans-serif;background:#f1f3f4;margin:0;padding:16px;color:#222}
+  .wrap{max-width:900px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden}
+  header{background:linear-gradient(90deg,#0f3d1f,#1f6b35);color:#fff;text-align:center;padding:18px 10px}
+  header h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header small{opacity:.85}
+  .pad{padding:20px 24px 30px}
+  h2{font-size:18px;font-weight:500;margin:34px 0 10px;border-bottom:2px solid #e3e3e3;padding-bottom:6px}
+  .note{font-size:12.5px;color:#a15c00;background:#fff6e5;border-radius:6px;padding:6px 10px;margin:0 0 4px}
+  label{display:block;color:#3d9a3d;font-weight:600;font-size:14px;margin:16px 0 6px}
+  .f.need label::after{content:" *";color:#d00}
+  input,select{width:100%;padding:11px 12px;border:1px solid #cfcfcf;border-radius:10px;font-size:14px;background:#fff;font-family:inherit}
+  select{background:#ebeaee}
+  input:focus,select:focus{outline:2px solid #3d9a3d55;border-color:#3d9a3d}
+  input[readonly]{background:#f3f3f3}
+  input:disabled,select:disabled{background:#f6f6f6;color:#222;opacity:1;cursor:default}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .hidden{display:none !important}
+  .dwrap{position:relative;display:flex;gap:6px}
+  .dwrap input[type=text]{flex:1}
+  .cal{width:44px;padding:0;border:1px solid #cfcfcf;border-radius:10px;background:#fff;font-size:18px;cursor:pointer}
+  .native{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;right:22px;bottom:0}
+  button{font-family:inherit;cursor:pointer}
+  .primary{margin-top:30px;width:100%;padding:14px;font-size:16px;font-weight:600;border:0;border-radius:10px;background:#0a8f7f;color:#fff}
+  .primary:disabled{background:#999;cursor:not-allowed}
+  .btn{padding:9px 16px;border:1px solid #bbb;border-radius:8px;background:#fff;font-size:14px}
+  .btn.green{background:#0a8f7f;color:#fff;border-color:#0a8f7f}
+  .btn.blue{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
+  .btn.sm{padding:5px 10px;font-size:13px}
+  /* entries */
+  .entries{border-top:6px solid #e8e8e8;padding:10px 24px 30px;background:#fafafa}
+  .datebar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .datebar .box{width:220px}
+  .tw{overflow-x:auto;margin-top:16px}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+  th,td{border:1px solid #ddd;padding:8px;text-align:left;vertical-align:middle}
+  th{background:#eef5ee}
+  .ok{color:#1c6b1c;font-weight:600}.lock{color:#a11;font-weight:600}
+  .empty{color:#777;margin-top:16px}
+  footer{text-align:center;font-size:12px;color:#777;padding:12px}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:#0007;z-index:50;display:flex;align-items:center;justify-content:center;padding:12px}
+  .box{background:#fff;border-radius:10px;width:100%;max-width:760px;max-height:92vh;display:flex;flex-direction:column}
+  .mhead{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid #ddd;font-weight:600}
+  .mbody{padding:4px 20px 20px;overflow-y:auto}
+  .mfoot{padding:12px 18px;border-top:1px solid #ddd;display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+  .mfoot .st{margin-right:auto;font-size:13px}
+  .pw{max-width:340px;padding:20px}
+  #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);padding:12px 18px;border-radius:8px;color:#fff;font-weight:600;z-index:99;display:none;max-width:90%}
+  #toast.ok2{background:#1c8a3c}#toast.err{background:#c0392b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Patient Transfer Service Data Collection Form</h1><small>Emergency Services Department, Punjab — Rescue 1122</small></header>
+
+  <div class="pad">
+    <form id="f" autocomplete="off">
+      <div id="fields"></div>
+      <button type="submit" class="primary" id="btn">Save Information</button>
+    </form>
+  </div>
+
+  <section class="entries">
+    <h2>Saved Entries</h2>
+    <div class="datebar">
+      <div class="box"><label style="margin-top:0">Select Date (MM/DD/YYYY)</label><div id="viewDateHolder"></div></div>
+      <button type="button" class="btn" id="todayBtn">Today</button>
+      <button type="button" class="btn green" id="showBtn">Show Entries</button>
+    </div>
+    <div class="tw" id="tbl"></div>
+  </section>
+  <footer>Copyrights © Punjab Emergency Service (Rescue 1122)</footer>
+</div>
+
+<!-- details / edit modal -->
+<div id="modal" class="overlay hidden"><div class="box">
+  <div class="mhead"><span id="mtitle"></span><button type="button" class="btn sm" id="mclose">✕</button></div>
+  <form id="mform" class="mbody" autocomplete="off" onsubmit="return false"></form>
+  <div class="mfoot">
+    <span class="st" id="mstatus"></span>
+    <button type="button" class="btn blue" id="mEdit">Edit</button>
+    <button type="button" class="btn green" id="mSave">Save Changes</button>
+    <button type="button" class="btn" id="mCancel">Close</button>
+  </div>
+</div></div>
+
+<!-- password box -->
+<div id="pwBox" class="overlay hidden"><div class="box pw">
+  <b>Admin Password</b>
+  <p style="font-size:13px;margin:8px 0">Edit ka 1 ghanta mukammal ho chuka hai. Edit karne ke liye admin password likhein.</p>
+  <input type="password" id="pwInput" placeholder="Password">
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+    <button type="button" class="btn" id="pwCancel">Cancel</button>
+    <button type="button" class="btn green" id="pwOk">OK</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+// ====== APNA GOOGLE APPS SCRIPT WEB APP URL YAHAN PASTE KAREIN ======
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBs12f31baxTDFzMdUUyVOcx5IsoN52j8XUDuMrFvz3NlfctAMjWHa-6PT9p6sq2gr/exec";
+
+const HOSPITALS = [
+"Tehsil HeadQuarter Hospital Sadiq Abad","RHC Nawaz Abad (SDQ)","Tehsil Head Quarter Hospital Khanpur","Tehsil Head Quarter Hospital Liaqatpur","RHC Bagho Bahar (KPR)","RHC Sajha (KPR)","Mianwali Qureshian (RYK)","BHU Chak No.125 Manthar","RHC Sanjar Pur","BHU Mari Allah Bachaya (Tehsil Khanpur)","BHU Ranjhy Khan SDQ","RHC Khan Bela(LQP)","RHC Jamal Din Wali (Tehsil Sadiqabad)","BHU Tranda Muhammad Panah LQP","BHU Basti Ladki KNP","BHU Head 42 LQP","RHC Kot Samaba (R.Y.Khan)","RHC Tranda Muhammad Panah (LQP)","BHU Chak No.116/P (R.Y.Khan)","RHC Nawan Kot (KPR)","BHU Saddi Sultan (Tehsil Sadiqabad)","RHC Zaher Peer","Ahmed pur Lamma","RHC Feroza","RHC Manthar (Tehsil R.Y.Khan)","RHC Pacca Laran (Tehsil LQP)","BHU Basti Abdul Kareem (Tehsil SDK)","BHU Chak No.92/P (R.Y.Khan)","BHU Ahmad Naich( LQP","BHU Bahishti (Tehsil R.Y.Khan)","BHU Kotla Pathan (Tehsil Khanpur)","BHU Chak Abbas (Tehsil R.Y. Khan)","RHC Allah Abad (Tehsil LQP)","RHC Chak No.173/p SDK","BHU Mia Wali Shiakhan","RHC Tranda Sway Khan (Tehsil R.Y.Khan)","BHU Zafar Abad LQP","BHU Dera Fareedi (Tehsil LQP)","BHU Mud Bhura (Tehsil KNP)","BHU Chak No.158/P (Tehsil SDK)","BHU Chak No.186/P (Tehsil SDK)","Indus Hospital (Bhong) Tehsil Sadiq Abad","BHU Baghar Ghrari","BHU Muhammad Nawaz Wasa ( Teshil SDK)","BHU Ghouspur (Tehsil KPR)","BHU Jajja Abasian(Khanpur)","Mud Daha","BHU Chachran Shareef","BHU Basti Rais Ghulam Rasool (R.Y.Khan)","RHC Channi Goth (LQP)","BHU 112 N.P Nawan Kot (KNP)","BHU Malik Pur Khanpur","BHU Chak NO.148/P Sadiqabad","BHU Chak 1-A Doshakhan LQP","BHU Haroon Abad LQP","BHU Chak 01/p Khanpur","BHU Wichani Tranda Sway Khan","BHU Chowk Sawatera sadiqabad","Indus Hospital Bhong SDK","RHC Rajanpur Kalan (RYK)","BHU Basti Kacha.RYK","BHU 112 NP Khan Pur","BHU Murtaza Abad.KLP Road RYK","BHU Chak NO.26 N.P Sadiq Abad","BHU Rukan Pur","BHU 25/A Tehsil Liaquat pur","BHU Batha Shaikhan Khanpur","BHU Chowk Shahbaz Pur SDK","BHU Said Pur, KNP","CMH CANTT.","BHU Chak 55 Thul Hassan,Rahim Yar Khan","BHU Ghari Ikhtiyar Khan,","Govt. Railway Hospital (Khanpur)","BHU Sonak (Tehsil R.Y.Khan)","BHU Mad Shora KPR","BHU 100 Chak RYK","RYK Hospital Pull Dari Sanghi RYK","BHU Langiwar, Khanpur","Roti Shareef","BHU Kot Sabzal,Sadiqabad","BHU Chak No.92/P, Patan Miora road, Rahim Yar Khan","BHU Fatehpur Punjabian RYK","Fateh Pur Kamal Khan Pur","BHU Ahsan Pur Rahim yar Khan","BHU Bindor Abasian SDK","Dr.Akhtar Masood Children's Hospital Rahim Yar Khan","Hub & Spoke SZH Zahir Pir","Ibn-e-Sina Hospital Muzaffar Garh","DHQ RY Khan"
+];
+const VEHICLES = Array.from({length:36},(_,i)=>'RYA-'+String(i+1).padStart(2,'0'));
+
+// ---------- form schema ----------
+// t: text | number | date | time | select | datetime | age ; opt = optional ; cond = conditional ; vital = lazmi if age >= 10 years
+const SECTIONS = [
+ {title:'Referring Hospital Details', fields:[
+  {k:'Patient Referral #',label:'Patient Referral #',t:'text',ph:'Enter Patient Referral Number'},
+  {k:'Referring Hospital Name',label:'Referring Hospital Name',t:'select',opts:HOSPITALS,first:'-Select Hospital-'},
+  {k:'Referring Hospital #',label:'Referring Hospital #',t:'text',ph:'Enter Referring Hospital COD #'},
+  {k:'Referring Unit',label:'Referring Unit',t:'text',ph:'Referring Hospital Unit'},
+  {k:'Referring Date',label:'Referring Date',t:'date'},
+  {k:'Referring Time',label:'Referring Time (24h)',t:'time'},
+  {k:'Reason For Referral',label:'Reason For Referral',t:'select',first:'-Select Referral Reason-',opts:['Non-availability of Specialist Doctor','Non-availability of facility for advance treatment','Any Other']},
+  {k:'Any Other Reason Detail',label:'Any Other Reason Detail',t:'text',ph:'Enter Any other Reason Detail',cond:true},
+  {k:'SR/ Duty Doctor Name',label:'SR/ Duty Doctor Name',t:'text',ph:'Enter SR/ Duty Doctor Name'},
+  {t:'datetime',kd:'Call Date',kt:'Call Time',label:'Call Date & Time (24h)'},
+  {k:'Response Time (Minutes)',label:'Response Time (in Minutes)',t:'number',ph:'Enter Response Time in Minutes'}
+ ]},
+ {title:'Patient Details', fields:[
+  {k:'Patient Name',label:'Patient Name',t:'text',ph:'Enter Patient Name'},
+  {k:'Father/ Husband Name',label:'Father/ Husband Name',t:'text',ph:'Enter Father/ Husband Name'},
+  {k:'Gender',label:'Gender',t:'select',first:'-Select Gender-',opts:['Male','Female']},
+  {t:'age',k:'Patient Age',label:'Patient Age'},
+  {k:'Clinical Diagnoses',label:'Clinical Diagnoses',t:'text',ph:'Enter Clinical Diagnoses'}
+ ]},
+ {title:'Patient Vitals And Condition', note:'Patient ki age 10 saal ya us se zyada ho to Vital Signs (*) lazmi likhne hain.', fields:[
+  {k:'Pulse',label:'Pulse',t:'number',ph:'Enter Pulse',vital:true},
+  {k:'Systolic BP',label:'Systolic/ Upper BP',t:'number',ph:'Enter Systolic/ Upper BP',vital:true},
+  {k:'Diastolic BP',label:'Diastolic/ Lower BP',t:'number',ph:'Enter Diastolic/ Lower BP',vital:true},
+  {k:'Temperature',label:'Temperature',t:'number',ph:'Enter Temperature',vital:true},
+  {k:'Respiratory Rate',label:'Respiratory Rate (R.R)',t:'number',ph:'Enter Respiratory Rate (R.R)',vital:true},
+  {k:'General Condition',label:'General Condition of Patient',t:'text',ph:'Enter General Condition of Patient',opt:true}
+ ]},
+ {title:'Ambulance Details', fields:[
+  {k:'Ambulance Call Sign',label:'Ambulance/ Vehicle Call Sign',t:'select',opts:VEHICLES,first:'-Select Vehicle-'},
+  {t:'datetime',kd:'Date Out',kt:'Time Out',label:'Date & Time Out (24h)'},
+  {t:'datetime',kd:'Date In',kt:'Time In',label:'Date & Time In (24h)'},
+  {k:'Meter Out',label:'Meter Out',t:'number',ph:'Enter Meter Out of Ambulance'},
+  {k:'Meter In',label:'Meter In',t:'number',ph:'Enter Meter In of Ambulance'},
+  {k:'Total Mileage (KM)',label:'Total Mileage (KM)',t:'text',ph:'Auto calculated',ro:true,opt:true}
+ ]},
+ {title:'Referred/ Receiving Hospital Details', fields:[
+  {k:'Referred Hospital District',label:'Referred Hospital District',t:'select',first:'-Select Referred District-',opts:['Rahim Yar Khan','Any Other District']},
+  {k:'Other District Detail',label:'Other District Detail',t:'text',ph:'Other District Detail',cond:true},
+  {k:'Referred Hospital Name',label:'Referred Hospital Name',t:'select',opts:HOSPITALS.concat(['Other Hospital']),first:'-Select Hospital-'},
+  {k:'Other Hospital Detail',label:'Other Hospital Detail',t:'text',ph:'Other Hospital Detail',cond:true},
+  {k:'Referred Hospital #',label:'Referred Hospital #',t:'text',ph:'Referred Hospital Number'},
+  {k:'Received By (Doctor Name)',label:'Received By (Doctor Name)',t:'text',ph:'Enter Name of Receiving Doctor'},
+  {k:'Receiving Date',label:'Receiving Date',t:'date'},
+  {k:'Receiving Time',label:'Receiving Time (24h)',t:'time'}
+ ]}
+];
+
+// ---------- helpers ----------
+function el(tag,attrs={},...kids){
+  const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==='class') e.className=v;
+    else if(v===true) e.setAttribute(k,'');
+    else if(v!==false && v!=null) e.setAttribute(k,v);
+  }
+  kids.flat().forEach(c=>e.append(c));
+  return e;
+}
+const pad=n=>String(n).padStart(2,'0');
+function maskDate(v){const d=v.replace(/\D/g,'').slice(0,8);let s=d.slice(0,2);if(d.length>2)s+='/'+d.slice(2,4);if(d.length>4)s+='/'+d.slice(4);return s;}
+function validDate(s){const m=/^(\d\d)\/(\d\d)\/(\d{4})$/.exec(s);if(!m)return false;const mo=+m[1],da=+m[2],y=+m[3];const dt=new Date(y,mo-1,da);return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===da;}
+function toISO(s){const m=/^(\d\d)\/(\d\d)\/(\d{4})$/.exec(s);return m?m[3]+'-'+m[1]+'-'+m[2]:'';}
+function todayStr(){const d=new Date();return pad(d.getMonth()+1)+'/'+pad(d.getDate())+'/'+d.getFullYear();}
+
+function dateInput(name){
+  const w=el('div',{class:'dwrap'});
+  const t=el('input',{name,type:'text',placeholder:'MM/DD/2026',inputmode:'numeric',maxlength:10,
+    pattern:'(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/[0-9]{4}',title:'Format: MM/DD/YYYY  (e.g. 10/19/2026)'});
+  t.addEventListener('input',()=>{t.value=maskDate(t.value);});
+  const p=el('input',{type:'date',tabindex:'-1',class:'native'});
+  const b=el('button',{type:'button',class:'cal',title:'Calendar'},'📅');
+  b.onclick=()=>{if(t.disabled)return;p.value=toISO(t.value)||'';try{p.showPicker();}catch(e){p.click();}};
+  p.onchange=()=>{if(p.value){const [y,m,d]=p.value.split('-');t.value=m+'/'+d+'/'+y;t.dispatchEvent(new Event('input',{bubbles:true}));}};
+  w.append(t,b,p);return w;
+}
+function timeInput(name){
+  const t=el('input',{name,type:'text',placeholder:'HH:MM (24 hour)',inputmode:'numeric',maxlength:5,
+    pattern:'([01][0-9]|2[0-3]):[0-5][0-9]',title:'24-hour format HH:MM  (e.g. 14:30)'});
+  t.addEventListener('input',()=>{const d=t.value.replace(/\D/g,'').slice(0,4);t.value=d.length>2?d.slice(0,2)+':'+d.slice(2):d;});
+  return t;
+}
+function makeInput(f){
+  const req=!f.opt&&!f.cond&&!f.vital;
+  if(f.t==='select'){
+    const s=el('select',{name:f.k,required:req});
+    s.append(new Option(f.first,''));(f.opts||[]).forEach(o=>s.append(new Option(o,o)));return s;
+  }
+  if(f.t==='date'){const w=dateInput(f.k);w.querySelector('input[name]').required=req;return w;}
+  if(f.t==='time'){const i=timeInput(f.k);i.required=req;return i;}
+  return el('input',{name:f.k,type:f.t==='number'?'number':'text',placeholder:f.ph||'',
+    min:f.t==='number'?0:null,step:f.t==='number'?'any':null,required:req,readonly:!!f.ro,tabindex:f.ro?'-1':null});
+}
+
+// build all fields into a container
+function build(root){
+  SECTIONS.forEach(sec=>{
+    root.append(el('h2',{},sec.title));
+    if(sec.note) root.append(el('p',{class:'note'},sec.note));
+    sec.fields.forEach(f=>{
+      const w=el('div',{class:'f','data-k':f.k||f.kd});
+      w.append(el('label',{},f.label));
+      if(f.t==='datetime'){
+        const d=dateInput(f.kd),t=timeInput(f.kt);
+        d.querySelector('input[name]').required=true;t.required=true;
+        w.append(el('div',{class:'row'},d,t));
+      }else if(f.t==='age'){
+        const n=el('input',{name:'Patient Age',type:'number',min:0,step:'any',placeholder:'Enter Patient Age',required:true});
+        const u=el('select',{name:'Age Unit',required:true});
+        u.append(new Option('-Select Age-',''));['Days','Months','Years'].forEach(x=>u.append(new Option(x,x)));
+        w.append(el('div',{class:'row'},n,u));
+      }else w.append(makeInput(f));
+      if(f.vital) w.classList.add('vital');
+      root.append(w);
+    });
+  });
+  wire(root);
+}
+
+function wire(root){
+  const q=n=>root.querySelector('[name="'+n+'"]');
+  function refresh(){
+    [['Reason For Referral','Any Other','Any Other Reason Detail'],
+     ['Referred Hospital District','Any Other District','Other District Detail'],
+     ['Referred Hospital Name','Other Hospital','Other Hospital Detail']].forEach(([sk,val,tk])=>{
+      const on=q(sk).value===val,w=root.querySelector('[data-k="'+tk+'"]'),i=q(tk);
+      w.classList.toggle('hidden',!on);i.required=on;if(!on)i.value='';
+    });
+    const a=parseFloat(q('Meter Out').value),b=parseFloat(q('Meter In').value);
+    q('Total Mileage (KM)').value=(!isNaN(a)&&!isNaN(b))?String(Math.round((b-a)*100)/100):'';
+    const age=parseFloat(q('Patient Age').value),need=q('Age Unit').value==='Years'&&age>=10;
+    root.querySelectorAll('.f.vital').forEach(w=>{w.classList.toggle('need',need);w.querySelector('input').required=need;});
+  }
+  root.addEventListener('input',refresh);root.addEventListener('change',refresh);
+  root._refresh=refresh;refresh();
+}
+function getValues(root){const o={};root.querySelectorAll('[name]').forEach(x=>{o[x.name]=(x.value||'').trim();});return o;}
+function setValues(root,obj){root.querySelectorAll('[name]').forEach(x=>{x.value=obj[x.name]||'';});root._refresh();}
+function setMode(root,ro){root.querySelectorAll('input,select,button.cal').forEach(x=>{x.disabled=ro;});}
+function clearForm(root){
+  root.querySelectorAll('[name]').forEach(x=>{if(x.tagName==='SELECT')x.selectedIndex=0;else x.value='';});
+  root.querySelector('[name="Referred Hospital District"]').value='Rahim Yar Khan';
+  root._refresh();
+}
+function validate(root){
+  for(const x of root.querySelectorAll('.dwrap input[name]')){
+    if(x.value&&!validDate(x.value)){x.focus();toast('Date sahi nahi: '+x.value+' (MM/DD/YYYY likhein)',false);return false;}
+  }
+  const a=parseFloat(root.querySelector('[name="Meter Out"]').value),b=parseFloat(root.querySelector('[name="Meter In"]').value);
+  if(!isNaN(a)&&!isNaN(b)&&b<a){toast('Meter In, Meter Out se kam nahi ho sakta.',false);return false;}
+  return true;
+}
+let tt;
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.className=ok?'ok2':'err';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',4500);}
+
+async function api(payload){
+  if(SCRIPT_URL.startsWith('PASTE')){return {ok:false,error:'Pehle SCRIPT_URL set karein.'};}
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    return await r.json();
+  }catch(e){return {ok:false,error:'Internet / server error, dobara try karein.'};}
+}
+
+// ---------- main form ----------
+const f=document.getElementById('f'),fields=document.getElementById('fields'),btn=document.getElementById('btn');
+build(fields);clearForm(fields);
+f.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!validate(fields))return;
+  btn.disabled=true;btn.textContent='Saving...';
+  const res=await api({action:'submit',data:getValues(fields)});
+  btn.disabled=false;btn.textContent='Save Information';
+  if(res.ok){
+    clearForm(fields);toast('✔ Entry save ho gayi. 1 ghante tak neeche se edit kar sakte hain.');
+    viewDate.value=todayStr();loadEntries();
+  }else toast(res.error||'Save nahi hua',false);
+});
+
+// ---------- entries list ----------
+const holder=document.getElementById('viewDateHolder');
+const viewDateWrap=dateInput('viewDate');holder.append(viewDateWrap);
+const viewDate=viewDateWrap.querySelector('input[name]');viewDate.value=todayStr();
+document.getElementById('todayBtn').onclick=()=>{viewDate.value=todayStr();loadEntries();};
+document.getElementById('showBtn').onclick=loadEntries;
+viewDate.addEventListener('change',()=>{if(validDate(viewDate.value))loadEntries();});
+viewDateWrap.querySelector('.native').addEventListener('change',()=>setTimeout(loadEntries,50));
+
+let ROWS=[];
+async function loadEntries(){
+  const d=viewDate.value;
+  if(!validDate(d)){toast('Date MM/DD/YYYY mein likhein.',false);return;}
+  const box=document.getElementById('tbl');box.innerHTML='';box.append(el('p',{class:'empty'},'Loading...'));
+  const res=await api({action:'list',date:d});
+  box.innerHTML='';
+  if(!res.ok){box.append(el('p',{class:'empty'},res.error||'Load nahi hua'));return;}
+  ROWS=res.rows;
+  if(!ROWS.length){box.append(el('p',{class:'empty'},d+' ki koi entry nahi hai.'));return;}
+  const t=el('table');
+  t.append(el('tr',{},...['#','Time','Referral #','Patient Name','Referring Hospital','Referred Hospital','Vehicle','Status','Details'].map(h=>el('th',{},h))));
+  ROWS.forEach((r,i)=>{
+    const D=r.data,refd=D['Referred Hospital Name']==='Other Hospital'?(D['Other Hospital Detail']||'Other'):D['Referred Hospital Name'];
+    const st=r.editable?el('span',{class:'ok'},'✏ Editable ('+r.minsLeft+' min baqi)'):el('span',{class:'lock'},'🔒 Locked');
+    const vb=el('button',{type:'button',class:'btn sm'},'View'),eb=el('button',{type:'button',class:'btn sm blue'},'Edit');
+    vb.onclick=()=>openEntry(r,'view');eb.onclick=()=>{openEntry(r,'view');startEdit();};
+    t.append(el('tr',{},el('td',{},String(i+1)),el('td',{},r.entryTime),el('td',{},D['Patient Referral #']),el('td',{},D['Patient Name']),
+      el('td',{},D['Referring Hospital Name']),el('td',{},refd),el('td',{},D['Ambulance Call Sign']),el('td',{},st),
+      el('td',{style:'white-space:nowrap'},vb,' ',eb)));
+  });
+  box.append(t);
+}
+
+// ---------- modal view / edit ----------
+const mform=document.getElementById('mform'),modal=document.getElementById('modal');
+build(mform);
+let cur={row:null,pw:'',mode:'view'};
+const bEdit=document.getElementById('mEdit'),bSave=document.getElementById('mSave'),bCancel=document.getElementById('mCancel');
+function showMode(mode){
+  cur.mode=mode;setMode(mform,mode==='view');
+  bEdit.classList.toggle('hidden',mode!=='view');bSave.classList.toggle('hidden',mode!=='edit');
+  bCancel.textContent=mode==='edit'?'Cancel':'Close';
+  const r=cur.row;
+  document.getElementById('mstatus').textContent=mode==='edit'?'Edit mode':(r.editable?'Editable: '+r.minsLeft+' min baqi':'🔒 Locked — admin password se edit hoga');
+}
+function openEntry(row,mode){
+  cur={row,pw:'',mode};
+  document.getElementById('mtitle').textContent='Entry — '+row.entryDate+' '+row.entryTime+'  |  Referral # '+(row.data['Patient Referral #']||'');
+  setValues(mform,row.data);showMode(mode);modal.classList.remove('hidden');
+}
+function closeModal(){modal.classList.add('hidden');}
+async function startEdit(){
+  const row=cur.row;cur.pw='';
+  if(!row.editable){
+    const pw=await askPassword();if(pw===null)return;
+    const r=await api({action:'verify',password:pw});
+    if(!r.ok){toast('Password ghalat hai.',false);return;}
+    cur.pw=pw;
+  }
+  showMode('edit');
+}
+bEdit.onclick=startEdit;
+document.getElementById('mclose').onclick=closeModal;
+bCancel.onclick=()=>{if(cur.mode==='edit'){setValues(mform,cur.row.data);showMode('view');}else closeModal();};
+bSave.onclick=async()=>{
+  if(!mform.reportValidity()||!validate(mform))return;
+  bSave.disabled=true;bSave.textContent='Saving...';
+  const res=await api({action:'update',id:cur.row.id,data:getValues(mform),password:cur.pw});
+  bSave.disabled=false;bSave.textContent='Save Changes';
+  if(res.ok){toast('✔ Entry update ho gayi.');closeModal();loadEntries();}
+  else toast(res.error||'Update nahi hua',false);
+};
+
+// ---------- password dialog ----------
+function askPassword(){
+  return new Promise(res=>{
+    const o=document.getElementById('pwBox'),i=document.getElementById('pwInput'),ok=document.getElementById('pwOk'),no=document.getElementById('pwCancel');
+    i.value='';o.classList.remove('hidden');i.focus();
+    const done=v=>{o.classList.add('hidden');ok.onclick=no.onclick=i.onkeydown=null;res(v);};
+    ok.onclick=()=>done(i.value);no.onclick=()=>done(null);
+    i.onkeydown=e=>{if(e.key==='Enter')done(i.value);};
+  });
+}
+
+if(!SCRIPT_URL.startsWith('PASTE'))loadEntries();
+</script>
+</body>
+</html>
